@@ -1,8 +1,31 @@
 import sqlparse
+import csv
 
 
 def parse_query(query):
     return sqlparse.parse(query)
+
+
+def read_data(file_name):
+    with open(file_name, 'r') as f:
+        data = csv.reader(f)
+        data = list(data)
+        for row in data:
+            da = map(lambda x: int(x), row)
+            row[:] = list(da)
+        return data
+
+
+def index_by_col(exact, tables, schema):
+    try:
+        value = int(exact)
+        return value
+    except ValueError:
+        table, colname = exact.split('.')
+        tidx = tables.index(table)
+        colidx = schema[table].index(colname)
+        return (tidx, colidx)
+
 
 def read_metadata(file_name="files/metadata.txt") -> dict:
     """
