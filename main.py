@@ -46,7 +46,9 @@ class SQLEngine():
                 # must lie in the if condition
                 self.pairs.append(pair)
 
-    def parse(self, tokens):
+    def parse(self, query):
+        tokens = parse_query(query)[0].tokens
+
         self.wild = False
         for t in tokens:
             if t.value == 'distinct':
@@ -87,12 +89,10 @@ class SQLEngine():
     def run(self):
         pass
 
+
 if __name__ == '__main__':
     engine = SQLEngine("files/metadata.txt")
     print(engine.schema)
     querylist = sys.argv[1:]
     for query in querylist:
-        # x = sqlparse.format(query, reindent=True)
-        # print(x.splitlines())
-        tok = parse_query(query)[0]
-        engine.parse(tok.tokens)
+        engine.parse(query)
