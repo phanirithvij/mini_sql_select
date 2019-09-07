@@ -7,13 +7,13 @@ To run
 ```shell
 pip install -r requirements.txt
 
-python3 main.py
+python3 main.py "<query>"
 ```
 
 Or
 
 ```shell
-pipenv install
+pipenv install && pipenv shell
 
-pipenv shell
+python main.py "<query>"
 ```
