@@ -13,7 +13,9 @@ class SQLEngine():
         self.raw = [read_data(f'files/{x}.csv') for x in self.tables]
         self.data = format_data(self.schema, self.raw)
         self.distinct = False
+        self.relation = None
         self.aggregator = None
+        self.constraints = None
 
     def parse_constraints(self):
         if self.constraints:
@@ -64,20 +66,29 @@ class SQLEngine():
         if self.wild:
             self.cols = '*'
         else:
+            # make it same length in both * and non *
             self.cols = tokens.pop(0)
-        print(self.cols)
-        for k in tokens:
-            print(k, type(k))
+            self.cols = list(
+                filter(
+                    lambda x: type(x) != sqlparse.sql.Token, self.cols))
+            self.cols = list([x.value for x in self.cols])
+
         if len(tokens) <= 1 or len(tokens) > 3:
             raise Exception("Invalid sql syntax")
 
         self.curtables = tokens[0]
-        self.constraints = None
+        self.curtables = list(
+            filter(
+                lambda x: type(x) != sqlparse.sql.Token, self.curtables))
+        self.curtables = list([x.value for x in self.curtables])
+
+        for tab in self.curtables:
+            if tab not in self.tables:
+                raise Exception(f"'{tab}' table doesn't exist in the DB")
 
         if type(tokens[-1]) == sqlparse.sql.Where:
             self.constraints = tokens[-1]
 
-        self.relation = None
         self.parse_constraints()
 
         print(self.distinct)
