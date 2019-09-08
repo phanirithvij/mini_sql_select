@@ -116,23 +116,6 @@ def filter_columns(tables, **kwargs):
         return ans
 
 
-def get_sch_cols(metadata, *tables):
-    '''
-    table, attribute will be combined
-    returns a list of str
-    like table1.A, table1.B, table1.C
-    '''
-    if not tables:
-        tables = metadata.keys()
-    a = []
-    for table in tables:
-        schema_x = map(lambda x: f'{table}.{x}', metadata[table])
-        a.append(list(schema_x))
-    d = []
-    for x in a:
-        d[:] += x
-    return d
-
 
 if __name__ == '__main__':
     schema = read_metadata()

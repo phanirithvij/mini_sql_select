@@ -2,10 +2,10 @@ import sys
 
 import sqlparse
 
-from algos import (aggregate, avg, filter_columns, format_data, get_sch_cols,
-                   join, multiplecols, project)
-from parse_q import (full_cols, index_by_col, parse_query, read_data,
-                     read_metadata)
+from algos import (aggregate, avg, filter_columns, format_data, join,
+                   multiplecols, project)
+from parse_q import (full_cols, get_sch_cols, index_by_col, parse_query,
+                     read_data, read_metadata)
 
 
 class SQLEngine():
@@ -41,11 +41,11 @@ class SQLEngine():
                                       sqlparse.tokens.Whitespace, const))
                 pair = []
                 ide1 = index_by_col(
-                    tokensa[0].value, self.tables, self.schema)
+                    tokensa[0].value, self.curtables, self.curschema)
                 pair.append(ide1)
 
                 ide2 = index_by_col(
-                    tokensa[-1].value, self.tables, self.schema)
+                    tokensa[-1].value, self.curtables, self.curschema)
                 pair.append(ide2)
 
                 oper = tokensa[1].value
@@ -91,17 +91,26 @@ class SQLEngine():
                 self.aggrecol = self.cols.tokens[1].tokens[1].value
             elif type(self.cols) == sqlparse.sql.Identifier:
                 # one value case and not aggregate
-                single_value = self.cols.tokens[0].value
+                if len(self.cols.tokens) == 3:
+                    # table.A
+                    single_value = self.cols.tokens[-1].value
+                else:
+                    single_value = self.cols.tokens[0].value
                 del self.cols
                 self.cols = ['']
                 self.cols[0] = single_value
+                # print(self.cols, "*"*67)
+                self.cols = list([x.split('.')[-1] for x in self.cols])
+                # print(self.cols, "*"*67)
             else:
                 # multi column projection
                 self.cols = list(
                     filter(
                         lambda x: type(x) != sqlparse.sql.Token, self.cols))
                 self.cols = list([x.value for x in self.cols])
+                self.cols = list([x.split('.')[-1] for x in self.cols])
 
+        # print(tokens[-1], type(tokens[-1]))
         if len(tokens) < 1 or len(tokens) > 3:
             raise Exception("Invalid sql syntax", (tokens))
 
@@ -125,6 +134,24 @@ class SQLEngine():
         for k, v in self.schema.items():
             if k in self.curtables:
                 self.curschema[k] = v
+
+        self.tableschema = get_sch_cols(self.curschema)
+
+        if self.wild:
+            self.cols = self.curschema.values()
+            d = []
+            for i in self.cols:
+                d += i
+            self.cols = d
+
+        # check of all attributes exist in the schema
+        if not self.aggrecol:
+            colsd = [x.split('.')[-1] for x in self.tableschema]
+            # print(colsd)
+            # print(self.cols)
+            for col in self.cols:
+                if col not in colsd:
+                    raise Exception(f"'{col}' attribute doesn't exist")
 
         if self.wild and not self.aggrecol:
             # duplicate columns still needed if wildcard
@@ -161,7 +188,9 @@ class SQLEngine():
 
         if type(tokens[-1]) == sqlparse.sql.Where:
             self.constraints = tokens[-1]
-
+        elif type(tokens[-1]) == sqlparse.sql.Comparison:
+            # spelling mistake in where
+            raise Exception("'where' is spelled wrongly in the Query")
         self.parse_constraints()
 
         self.raw = [read_data(f'files/{x}.csv') for x in self.curtables]
@@ -176,8 +205,6 @@ class SQLEngine():
         # print('tables', self.curtables)
         # print('relation', self.relation)
         # print('pairs', self.pairs)
-
-        self.tableschema = get_sch_cols(self.curschema)
 
     def run(self):
 
@@ -233,5 +260,6 @@ if __name__ == '__main__':
     engine = SQLEngine()
     querylist = sys.argv[1:]
     for query in querylist:
+        # print(query)
         engine.parse(query)
         engine.run()

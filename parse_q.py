@@ -24,18 +24,47 @@ def full_cols(schema):
     return ret
 
 
+def get_sch_cols(metadata, *tables):
+    '''
+    table, attribute will be combined
+    returns a list of str
+    like table1.A, table1.B, table1.C
+    '''
+    if not tables:
+        tables = metadata.keys()
+    a = []
+    for table in tables:
+        schema_x = map(lambda x: f'{table}.{x}', metadata[table])
+        a.append(list(schema_x))
+    d = []
+    for x in a:
+        d[:] += x
+    return d
+
+
 def index_by_col(exact, tables, schema):
     try:
         value = int(exact)
         return value
     except ValueError:
-        try:
-            table, colname = exact.split('.')
-            tidx = tables.index(table)
-            colidx = schema[table].index(colname)
-        except ValueError:
-            raise Exception(f"Invalid SQL condition variable {exact}")
-        return (tidx, colidx)
+        splat = exact.split('.')
+        if len(splat) == 2:
+            table, colname = splat
+            try:
+                tidx = tables.index(table)
+                colidx = schema[table].index(colname)
+            except ValueError:
+                raise Exception(
+                    f"No such table '{table}' at where clause")
+            return (tidx, colidx)
+        else:
+            tschema = get_sch_cols(schema, *tables)
+            val = list(filter(lambda x: x.endswith(splat[0]), tschema))
+            # print(tschema, val, splat[0])
+            if len(val) == 0:
+                raise Exception(
+                    f"Invalid table name '{splat[0]}' at where clause")
+            return index_by_col(val[0], tables, schema)
 
 
 def read_metadata(file_name="files/metadata.txt") -> dict:
