@@ -115,7 +115,8 @@ class SQLEngine():
                 self.curschema[k] = v
 
         if self.wild and not self.aggrecol:
-            # duplicate columns still needed
+            # duplicate columns still needed if wildcard
+            # not aggregating
             self.cols = full_cols(self.curschema)
         elif not self.aggrecol:
             # purify cols after getting the table names
@@ -149,6 +150,9 @@ class SQLEngine():
 
         self.raw = [read_data(f'files/{x}.csv') for x in self.curtables]
         self.data = format_data(self.curschema, self.raw)
+
+        if self.cols == []:
+            raise Exception("Sql query invalid")
 
         print('distinct', self.distinct)
         print('cols', self.cols)

@@ -29,9 +29,12 @@ def index_by_col(exact, tables, schema):
         value = int(exact)
         return value
     except ValueError:
-        table, colname = exact.split('.')
-        tidx = tables.index(table)
-        colidx = schema[table].index(colname)
+        try:
+            table, colname = exact.split('.')
+            tidx = tables.index(table)
+            colidx = schema[table].index(colname)
+        except ValueError:
+            raise Exception(f"Invalid SQL condition variable {exact}")
         return (tidx, colidx)
 
 
