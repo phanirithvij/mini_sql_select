@@ -2,22 +2,25 @@ import sys
 
 import sqlparse
 
-from algos import format_data, avg
+from algos import (aggregate, avg, filter_columns, format_data, get_sch_cols,
+                   join, multiplecols, project)
 from parse_q import (full_cols, index_by_col, parse_query, read_data,
                      read_metadata)
 
 
 class SQLEngine():
-    def __init__(self, file_name):
+    def __init__(self, file_name="files/metadata.txt"):
         self.schema = read_metadata(file_name)
         self.tables = list(self.schema.keys())
         self.curschema = {}
         self.distinct = False
         self.relation = None
         self.aggregator = None
+        self.aggregator_name = None
         self.aggrecol = None
         self.constraints = None
         self.pairs = []
+        self.tableschema = None
 
     def parse_constraints(self):
         if self.constraints:
@@ -77,6 +80,7 @@ class SQLEngine():
             if type(self.cols) == sqlparse.sql.Function:
                 # aggregate
                 self.aggregator = self.cols.tokens[0].value
+                self.aggregator_name = self.aggregator
                 exec(f'agg = {self.aggregator}', locals(), globals())
                 print(agg)
                 # remove paranthesis
@@ -157,7 +161,6 @@ class SQLEngine():
         self.parse_constraints()
 
         self.raw = [read_data(f'files/{x}.csv') for x in self.curtables]
-        self.data = format_data(self.curschema, self.raw)
 
         if self.cols == []:
             raise Exception("Sql query invalid")
@@ -169,13 +172,51 @@ class SQLEngine():
         print('relation', self.relation)
         print('pairs', self.pairs)
 
-    def run(self):
-        print('\n\nRUNNING MATE')
+        self.tableschema = get_sch_cols(self.curschema)
 
+    def run(self):
+
+        if len(self.curtables) >= 2:
+            joined = join(*self.raw)
+        else:
+            joined = self.raw[0]
+        # size is (0, num_cols1, num_cols1+num_cols2, num_cols1+num_cols2+num_cols3 ...)
+        # size = [0, len(table1[0]), len(table1[0]) + len(table2[0])]
+        size = [0]
+        for table in self.raw:
+            lates = size[-1]
+            size.append(len(table[0]) + lates)
+
+        data = filter_columns(
+            joined,
+            pairs=self.pairs,
+            size=size,
+            relation=self.relation
+        )
+
+        if self.aggrecol:
+            col = index_by_col(self.aggrecol, self.curtables, self.curschema)
+            data = aggregate(data, self.aggregator, col, size=size)
+            data = [[data]]
+            schema = [self.aggregator_name]
+        else:
+            cols = []
+            for col in self.cols:
+                colid = index_by_col(col, self.curtables, self.curschema)
+                cols.append(colid)
+            multi = multiplecols(data, cols, size, self.tableschema)
+
+            schema = multi[0]
+            data = multi[1:]
+
+        if self.distinct:
+            data = dict.fromkeys(map(lambda x: tuple(x), data))
+            data = list(data)
+
+        project(data, schema)
 
 if __name__ == '__main__':
-    engine = SQLEngine("files/metadata.txt")
-    # print(engine.schema)
+    engine = SQLEngine()
     querylist = sys.argv[1:]
     for query in querylist:
         engine.parse(query)

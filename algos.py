@@ -38,6 +38,7 @@ def multiplecols(final, cols, size, schema):
         r = []
         for row in cols:
             idx = size[row[0]]+row[1]
+            # print(row, size, k)
             r.append(k[idx])
         res.append(r)
     return res
@@ -71,6 +72,8 @@ def filter_columns(tables, **kwargs):
     relation = kwargs.get('relation')  # and | or | nothing
     pairs = kwargs.get('pairs')
     size = kwargs.get('size')
+    if pairs == [] or pairs is None:
+        return tables
     if pairs is not None:
         if len(pairs) == 1 and relation is not None:
             raise OperationError(
@@ -82,12 +85,11 @@ def filter_columns(tables, **kwargs):
         filtered = filter_columns(tables, pairs=[pairs[0]], size=size)
         filtered_two = filter_columns(tables, pairs=[pairs[1]], size=size)
         # union filter
-        cop = set()
-        for row in filtered + filtered_two:
-            row = tuple(row)
-            cop.add(row)
+        data = dict.fromkeys(map(lambda x: tuple(x), filtered + filtered_two))
+        data = list(data)
+
         # print(filtered, filtered_two)
-        return cop
+        return data
     else:
         # relation is None so a single table
         pair = pairs[0]
@@ -114,12 +116,13 @@ def filter_columns(tables, **kwargs):
         return ans
 
 
-def get_sch_cols(metadata, *tables):
+def get_sch_cols(metadata):
     '''
     table, attribute will be combined
     returns a list of str
     like table1.A, table1.B, table1.C
     '''
+    tables = metadata.keys()
     a = []
     for table in tables:
         schema_x = map(lambda x: f'{table}.{x}', metadata[table])
@@ -132,7 +135,7 @@ def get_sch_cols(metadata, *tables):
 
 if __name__ == '__main__':
     schema = read_metadata()
-    schema = get_sch_cols(schema, 'table1', 'table2')
+    schema = get_sch_cols(schema)
     table1 = read_data('files/table1.csv')
     table2 = read_data('files/table2.csv')
     joined = join(table1, table2)
@@ -151,7 +154,7 @@ if __name__ == '__main__':
             [(0, 1), 811, '<=']
         ],
         size=size,
-        relation='and'
+        relation='or'
     )
 
     # if
