@@ -6,6 +6,7 @@ from algos import format_data, avg
 from parse_q import (full_cols, index_by_col, parse_query, read_data,
                      read_metadata)
 
+
 class SQLEngine():
     def __init__(self, file_name):
         self.schema = read_metadata(file_name)
@@ -51,6 +52,10 @@ class SQLEngine():
                 self.pairs.append(pair)
 
     def parse(self, query):
+        """
+        Parses the query and populates the memory with contents
+        Use `engine.run()` to run the last parsed query
+        """
         tokens = parse_query(query)[0].tokens
 
         self.wild = False
@@ -64,7 +69,6 @@ class SQLEngine():
                 break
 
         tokens = list(filter(lambda x: type(x) != sqlparse.sql.Token, tokens))
-        print(tokens)
 
         if not self.wild:
             # if wild max len will be 2
@@ -136,9 +140,13 @@ class SQLEngine():
                         enc.append(col)
                         new_cols.append(f'{table}.{col}')
                 if tabe:
-                    val = list(filter(lambda x: x.endswith(col), new_cols))[0]
-                    if val != f'{tabe}.{col}':
-                        new_cols[new_cols.index(val)] = f'{tabe}.{col}'
+                    val = list(filter(lambda x: x.endswith(col), new_cols))
+                    if len(val) == 1:
+                        val = val[0]
+                        if val != f'{tabe}.{col}':
+                            new_cols[new_cols.index(val)] = f'{tabe}.{col}'
+                    else:
+                        print('FUCK MATE', val)
 
             del self.cols
             self.cols = new_cols
@@ -155,13 +163,14 @@ class SQLEngine():
             raise Exception("Sql query invalid")
 
         print('distinct', self.distinct)
+        print('aggregate', self.aggregator, self.aggrecol)
         print('cols', self.cols)
         print('tables', self.curtables)
         print('relation', self.relation)
         print('pairs', self.pairs)
 
     def run(self):
-        pass
+        print('\n\nRUNNING MATE')
 
 
 if __name__ == '__main__':
@@ -170,3 +179,4 @@ if __name__ == '__main__':
     querylist = sys.argv[1:]
     for query in querylist:
         engine.parse(query)
+        engine.run()
