@@ -14,11 +14,11 @@ def format_data(raw, schema):
 
 def project(table, schema):
     schema_x = schema
-    print(' '.join(schema))
+    print(','.join(schema))
     for t in table:
         t = map(lambda x: str(x), t)
         t = list(t)
-        print(' '.join(t))
+        print(','.join(t))
 
 
 def aggregate(final, aggregator, column, size):
@@ -116,13 +116,14 @@ def filter_columns(tables, **kwargs):
         return ans
 
 
-def get_sch_cols(metadata):
+def get_sch_cols(metadata, *tables):
     '''
     table, attribute will be combined
     returns a list of str
     like table1.A, table1.B, table1.C
     '''
-    tables = metadata.keys()
+    if not tables:
+        tables = metadata.keys()
     a = []
     for table in tables:
         schema_x = map(lambda x: f'{table}.{x}', metadata[table])

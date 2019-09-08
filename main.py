@@ -81,8 +81,10 @@ class SQLEngine():
                 # aggregate
                 self.aggregator = self.cols.tokens[0].value
                 self.aggregator_name = self.aggregator
+                if self.aggregator_name not in ['sum', 'avg', 'min', 'max', 'len']:
+                    raise Exception(f"'{self.aggregator_name}' no such aggregator")
                 exec(f'agg = {self.aggregator}', locals(), globals())
-                print(agg)
+                self.aggregator = agg
                 # remove paranthesis
                 self.aggrecol = self.cols.tokens[1].tokens[1].value
             elif type(self.cols) == sqlparse.sql.Identifier:
@@ -149,8 +151,8 @@ class SQLEngine():
                         val = val[0]
                         if val != f'{tabe}.{col}':
                             new_cols[new_cols.index(val)] = f'{tabe}.{col}'
-                    else:
-                        print('FUCK MATE', val)
+                    # else:
+                        # print('Another one', val)
 
             del self.cols
             self.cols = new_cols
@@ -163,14 +165,15 @@ class SQLEngine():
         self.raw = [read_data(f'files/{x}.csv') for x in self.curtables]
 
         if self.cols == []:
-            raise Exception("Sql query invalid")
+            print([])
+            exit(0)
 
-        print('distinct', self.distinct)
-        print('aggregate', self.aggregator, self.aggrecol)
-        print('cols', self.cols)
-        print('tables', self.curtables)
-        print('relation', self.relation)
-        print('pairs', self.pairs)
+        # print('distinct', self.distinct)
+        # print('aggregate', self.aggregator, self.aggrecol)
+        # print('cols', self.cols)
+        # print('tables', self.curtables)
+        # print('relation', self.relation)
+        # print('pairs', self.pairs)
 
         self.tableschema = get_sch_cols(self.curschema)
 
@@ -195,9 +198,16 @@ class SQLEngine():
         )
 
         if self.aggrecol:
+            orig = self.aggrecol
+            self.aggrecol = get_sch_cols(self.curschema, *self.curtables)
+            val = list(filter(lambda x: x.endswith(orig), self.aggrecol))
+            if len(val) == 1:
+                self.aggrecol = val[0]
+            else:
+                raise Exception(f"Aggregation not possible with {orig}")
             col = index_by_col(self.aggrecol, self.curtables, self.curschema)
             data = aggregate(data, self.aggregator, col, size=size)
-            data = [[data]]
+            data = [data]
             schema = [self.aggregator_name]
         else:
             cols = []
@@ -214,6 +224,7 @@ class SQLEngine():
             data = list(data)
 
         project(data, schema)
+
 
 if __name__ == '__main__':
     engine = SQLEngine()
