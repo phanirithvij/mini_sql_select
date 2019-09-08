@@ -16,6 +16,14 @@ def read_data(file_name):
         return data
 
 
+def full_cols(schema):
+    ret = []
+    for k, v in schema.items():
+        li = list(map(lambda x: f'{k}.{x}', v))
+        ret += li
+    return ret
+
+
 def index_by_col(exact, tables, schema):
     try:
         value = int(exact)
@@ -62,4 +70,5 @@ def read_metadata(file_name="files/metadata.txt") -> dict:
 
 
 if __name__ == "__main__":
-    print(read_metadata())
+    sch = (read_metadata())
+    print(full_cols(sch))

@@ -21,12 +21,12 @@ def project(table, schema):
         print(' '.join(t))
 
 
-def aggregate(final, aggregator, options, size):
+def aggregate(final, aggregator, column, size):
     if aggregator is None:
         return final
     res = []
     for k in final:
-        r = k[size[options[0]] + options[1]]
+        r = k[size[column[0]] + column[1]]
         res.append(r)
     return [aggregator(res)]
 
@@ -122,7 +122,7 @@ def get_sch_cols(metadata, *tables):
     '''
     a = []
     for table in tables:
-        schema_x = map(lambda x: table + '.' + x, metadata[table])
+        schema_x = map(lambda x: f'{table}.{x}', metadata[table])
         a.append(list(schema_x))
     d = []
     for x in a:
@@ -155,7 +155,8 @@ if __name__ == '__main__':
     )
 
     # if
-    aggre = aggregate(data, None, (0, 1), size=size)
+    aggre = aggregate(data, max, (0, 1), size=size)
+    aggre = [aggre]
     # else
     # multi = multiplecols(aggre, [(0, 1), (1, 0)], size, schema)
 
@@ -167,4 +168,4 @@ if __name__ == '__main__':
     # project(multidata, schema)
 
     # if select *
-    project(data, schema)
+    project(aggre, schema)
