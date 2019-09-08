@@ -83,7 +83,8 @@ class SQLEngine():
                 self.aggregator = self.cols.tokens[0].value
                 self.aggregator_name = self.aggregator
                 if self.aggregator_name not in ['sum', 'avg', 'min', 'max', 'len']:
-                    raise Exception(f"'{self.aggregator_name}' no such aggregator")
+                    raise Exception(
+                        f"'{self.aggregator_name}' no such aggregator")
                 exec(f'agg = {self.aggregator}', locals(), globals())
                 self.aggregator = agg
                 # remove paranthesis
@@ -209,7 +210,8 @@ class SQLEngine():
             col = index_by_col(self.aggrecol, self.curtables, self.curschema)
             data = aggregate(data, self.aggregator, col, size=size)
             data = [data]
-            schema = [self.aggregator_name + str(self.aggreschema[0].tokens[-1])]
+            schema = [self.aggregator_name +
+                      str(self.aggreschema[0].tokens[-1])]
         else:
             cols = []
             for col in self.cols:
