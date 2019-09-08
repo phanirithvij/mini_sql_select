@@ -79,6 +79,7 @@ class SQLEngine():
             self.cols = tokens.pop(0)
             if type(self.cols) == sqlparse.sql.Function:
                 # aggregate
+                self.aggreschema = [self.cols]
                 self.aggregator = self.cols.tokens[0].value
                 self.aggregator_name = self.aggregator
                 if self.aggregator_name not in ['sum', 'avg', 'min', 'max', 'len']:
@@ -152,7 +153,7 @@ class SQLEngine():
                         if val != f'{tabe}.{col}':
                             new_cols[new_cols.index(val)] = f'{tabe}.{col}'
                     # else:
-                        # print('Another one', val)
+                    #     print('Another one', val)
 
             del self.cols
             self.cols = new_cols
@@ -208,7 +209,7 @@ class SQLEngine():
             col = index_by_col(self.aggrecol, self.curtables, self.curschema)
             data = aggregate(data, self.aggregator, col, size=size)
             data = [data]
-            schema = [self.aggregator_name]
+            schema = [self.aggregator_name + str(self.aggreschema[0].tokens[-1])]
         else:
             cols = []
             for col in self.cols:
