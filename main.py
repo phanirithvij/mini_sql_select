@@ -21,6 +21,7 @@ class SQLEngine():
         self.constraints = None
         self.pairs = []
         self.tableschema = None
+        self.query = ""
 
     def parse_constraints(self):
         if self.constraints:
@@ -59,6 +60,7 @@ class SQLEngine():
         Parses the query and populates the memory with contents
         Use `engine.run()` to run the last parsed query
         """
+        self.query = query
         tokens = parse_query(query)[0].tokens
 
         self.wild = False
@@ -112,7 +114,7 @@ class SQLEngine():
 
         # print(tokens[-1], type(tokens[-1]))
         if len(tokens) < 1 or len(tokens) > 3:
-            raise Exception("Invalid sql syntax", (tokens))
+            raise Exception("Invalid sql syntax", (self.query))
 
         self.curtables = tokens[0]
         if type(self.curtables) == sqlparse.sql.Identifier:
